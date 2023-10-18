@@ -14,11 +14,7 @@ export async function run(provider: NetworkProvider, args: string[]) {
 
     const minter = provider.open(Minter.createFromAddress(address));
 
-    await minter.sendMint(provider.sender(), {
-        address: address,
-        value: toNano('0.05'),
-        amount: toNano(1),
-    });
+    await minter.sendMint(provider.sender(), provider.sender().address as Address, toNano(0.05), BigInt(1e10));
 
     ui.write('Waiting for mint...');
 

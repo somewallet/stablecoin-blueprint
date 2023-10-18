@@ -104,28 +104,26 @@ export class Minter implements Contract {
     async sendMint(
         provider: ContractProvider,
         via: Sender,
-        opts: {
-            address: Address;
-            value: bigint;
-            amount: bigint;
-        }
+        address: Address,
+        value: bigint,
+        amount: bigint,
     ) {
         await provider.internal(via, {
-            value: opts.value,
+            value: value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
                 .storeUint(Opcodes.mint, 32) // mint opcode
                 .storeUint(0, 64) // query id
                 .storeCoins(toNano(0.2))
-                .storeAddress(opts.address)
+                .storeAddress(address)
                 .storeRef(
                     // internal transfer message
                     beginCell()
                         .storeUint(Opcodes.internal_transfer, 32)
                         .storeUint(0, 64)
-                        .storeCoins(opts.amount)
-                        .storeAddress(null) // TODO FROM?
-                        .storeAddress(null) // TODO RESP?
+                        .storeCoins(amount)
+                        .storeAddress(address) // TODO FROM?
+                        .storeAddress(address) // TODO RESP?
                         .storeCoins(0)
                         .storeBit(false) // forward_payload in this slice, not separate cell
                         .endCell()

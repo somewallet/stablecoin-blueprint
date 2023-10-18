@@ -6,6 +6,7 @@ export async function run(provider: NetworkProvider) {
     console.log('provider.sender().address', provider.sender().address);
 
     const minter = provider.open(
+
         Minter.createFromConfig(
             {
                 totalSupply: toNano('100000000'),

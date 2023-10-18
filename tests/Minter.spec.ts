@@ -4,6 +4,7 @@ import { Minter } from '../wrappers/Minter';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
 import { JettonWallet } from 'ton';
+import { describe } from 'node:test';
 
 describe('Minter', () => {
 
@@ -15,6 +16,7 @@ describe('Minter', () => {
 
     let blockchain: Blockchain;
     let minter: SandboxContract<Minter>;
+    let deployer: SandboxContract<TreasuryContract>
     let owner: SandboxContract<TreasuryContract>
     let ownerJettonWallet: SandboxContract<JettonWallet>
 
@@ -22,14 +24,15 @@ describe('Minter', () => {
 
         blockchain = await Blockchain.create();
 
-        const deployer = await blockchain.treasury('deployer');
-        
+        deployer = await blockchain.treasury('deployer');
+        owner = await blockchain.treasury('owner');
 
         minter = blockchain.openContract(Minter.createFromConfig(
             {
                 totalSupply: toNano('100000000'),
-                adminAddress: deployer.getSender().address,
-                managerAddress: deployer.getSender().address,
+                adminAddress: owner.address,
+                transferAdminAddress: owner.address,
+                managerAddress: owner.address,
                 jettonWalletCode: await compile('JettonWallet'),
         }, code));
 
@@ -41,6 +44,10 @@ describe('Minter', () => {
             debugLogs: false,
         })
 
+    });
+
+    it('should deploy', async () => {
+
         const stableMinterDeployResult = await minter.sendDeploy(deployer.getSender(), toNano('0.05'));
 
         expect(stableMinterDeployResult.transactions).toHaveTransaction({
@@ -50,15 +57,10 @@ describe('Minter', () => {
             success: true,
         });
 
-    });
-
-    it('should deploy', async () => {
-
-    });
+    })
 
     it('should mint tokens', async () => {
 
-        owner = await blockchain.treasury('owner');
         let mintOwnerStables = await minter.sendMint(owner.getSender(), owner.address, toNano(0.05), BigInt(1e9 * 1000));
 
         expect(mintOwnerStables.transactions).toHaveTransaction({
@@ -73,6 +75,6 @@ describe('Minter', () => {
             success: true
         });
 
-    });
+    })
 
 });

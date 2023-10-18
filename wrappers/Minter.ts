@@ -13,6 +13,7 @@ import {
 export type MinterConfig = {
     totalSupply: bigint;
     adminAddress: Address;
+    transferAdminAddress: Address;
     managerAddress: Address;
     jettonWalletCode: Cell;
 };
@@ -21,6 +22,7 @@ export function minterConfigToCell(config: MinterConfig): Cell {
     return beginCell()
         .storeCoins(config.totalSupply)
         .storeAddress(config.adminAddress)
+        .storeAddress(config.transferAdminAddress)
         .storeAddress(config.managerAddress)
         .storeRef(config.jettonWalletCode)
         .endCell();
@@ -122,7 +124,7 @@ export class Minter implements Contract {
                         .storeUint(Opcodes.internal_transfer, 32)
                         .storeUint(0, 64)
                         .storeCoins(amount)
-                        .storeAddress(address) // TODO FROM?
+                        .storeAddress(this.address) // TODO FROM?
                         .storeAddress(address) // TODO RESP?
                         .storeCoins(0)
                         .storeBit(false) // forward_payload in this slice, not separate cell

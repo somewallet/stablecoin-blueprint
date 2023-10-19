@@ -108,29 +108,35 @@ export class Minter implements Contract {
         via: Sender,
         address: Address,
         value: bigint,
-        amount: bigint,
+        amount: bigint
     ) {
         await provider.internal(via, {
             value: value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(Opcodes.mint, 32) // mint opcode
-                .storeUint(0, 64) // query id
-                .storeCoins(toNano(0.2))
-                .storeAddress(address)
-                .storeRef(
-                    // internal transfer message
-                    beginCell()
-                        .storeUint(Opcodes.internal_transfer, 32)
-                        .storeUint(0, 64)
-                        .storeCoins(amount)
-                        .storeAddress(this.address) // TODO FROM?
-                        .storeAddress(address) // TODO RESP?
-                        .storeCoins(0)
-                        .storeBit(false) // forward_payload in this slice, not separate cell
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.mint, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(address)
+                    .storeCoins(amount)
+                    .storeRef(
+                        beginCell()
+                            .storeUint(Opcodes.internal_transfer, 32)
+                            .storeUint(0, 64)
+                            .storeCoins(0)
+                            .storeAddress(address) // TODO FROM?
+                            .storeAddress(address) // TODO RESP?
+                            .storeCoins(0)
+                            .storeBit(false) // forward_payload in this slice, not separate cell
                         .endCell()
-                )
-                .endCell(),
+                    )
+                .endCell()
         });
     }
+
+    async getWalletAddress(provider: ContractProvider, owner: Address): Promise<Address> {
+        const res = await provider.get('get_wallet_address', [{ type: 'slice', cell: beginCell().storeAddress(owner).endCell() }])
+        return res.stack.readAddress()
+    }
+    
 }

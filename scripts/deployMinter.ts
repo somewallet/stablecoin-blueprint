@@ -9,10 +9,13 @@ export async function run(provider: NetworkProvider) {
 
         Minter.createFromConfig(
             {
+
                 totalSupply: toNano('100000000'),
-                adminAddress: provider.sender().address!,
-                managerAddress: provider.sender().address!,
-                jettonWalletCode: await compile('Minter'),
+                adminAddress: provider.sender().address,
+                transferAdminAddress: owner.address,
+                managerAddress: owner.address,
+                jettonWalletCode: await compile('JettonWallet')
+
             },
             await compile('Minter')
         )

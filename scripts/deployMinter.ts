@@ -1,8 +1,9 @@
-import { toNano } from 'ton-core';
+import { toNano, address } from 'ton-core';
 import { Minter } from '../wrappers/Minter';
 import { compile, NetworkProvider } from '@ton-community/blueprint';
 
 export async function run(provider: NetworkProvider) {
+
     console.log('provider.sender().address', provider.sender().address);
 
     const minter = provider.open(
@@ -10,10 +11,10 @@ export async function run(provider: NetworkProvider) {
         Minter.createFromConfig(
             {
 
-                totalSupply: toNano('100000000'),
-                adminAddress: provider.sender().address,
-                transferAdminAddress: owner.address,
-                managerAddress: owner.address,
+                totalSupply: toNano('1000000000'),
+                adminAddress: address('UQDWfTV0XtuUrRYF8BqOm1U2yr3axYlpvxxnGXyx2nwIys7y'),
+                transferAdminAddress: address('UQDWfTV0XtuUrRYF8BqOm1U2yr3axYlpvxxnGXyx2nwIys7y'),
+                managerAddress: address('EQDNU1IyaUByY-bzYEX43eHG5fsDdgmh_Ev5O5O-Fe8tpoWD'),
                 jettonWalletCode: await compile('JettonWallet')
 
             },
@@ -21,7 +22,7 @@ export async function run(provider: NetworkProvider) {
         )
     );
 
-    await minter.sendDeploy(provider.sender(), toNano('0.05'));
+    await minter.sendDeploy(provider.sender(), toNano('0.07'));
 
     await provider.waitForDeploy(minter.address);
 

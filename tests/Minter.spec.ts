@@ -45,12 +45,8 @@ describe('Minter', () => {
             debugLogs: false,
         })
 
-    });
-
-    it('should deploy', async () => {
-
         const stableMinterDeployResult = await minter.sendDeploy(deployer.getSender(), toNano('0.05'));
-        ownerJettonWallet = blockchain.openContract(JettonWallet.createFromAddress(await minter.getWalletAddress(owner.address)));
+        ownerJettonWallet = await blockchain.openContract(JettonWallet.createFromAddress(await minter.getWalletAddress(owner.address)));
 
         expect(stableMinterDeployResult.transactions).toHaveTransaction({
             from: deployer.address,
@@ -59,11 +55,7 @@ describe('Minter', () => {
             success: true,
         });
 
-    })
-
-    it('should mint tokens', async () => {
-
-        let mintOwnerStables = await minter.sendMint(owner.getSender(), owner.address, toNano(0.1), toNano(0.05));
+        let mintOwnerStables = await minter.sendMint(owner.getSender(), owner.address, toNano(0.1), toNano(0.05), toNano(20000));
 
         expect(mintOwnerStables.transactions).toHaveTransaction({
             from: owner.address,
@@ -76,6 +68,35 @@ describe('Minter', () => {
             to: ownerJettonWallet.address,
             success: true
         });
+
+        expect(await ownerJettonWallet.getJettonBalance()).toBe(toNano(20000))
+
+    });
+
+    it('should burn tokens', async () => {
+
+        let burnOwnerStables = await ownerJettonWallet.sendBurn(
+
+            owner.getSender(), 
+            owner.address,
+            toNano(0.1),
+            toNano(1000)
+
+        );
+
+        expect(burnOwnerStables.transactions).toHaveTransaction({
+            from: owner.address,
+            to: ownerJettonWallet.address,
+            success: true
+        });
+
+        expect(burnOwnerStables.transactions).toHaveTransaction({
+            from: ownerJettonWallet.address,
+            to: minter.address,
+            success: true
+        });
+
+        expect(await ownerJettonWallet.getJettonBalance()).toBe(toNano(20000 - 1000))
 
     })
 

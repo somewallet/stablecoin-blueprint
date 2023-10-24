@@ -31,6 +31,7 @@ export function minterConfigToCell(config: MinterConfig): Cell {
 export const Opcodes = {
     internal_transfer: 0x178d4519,
     mint: 21,
+    burn: 0x595f07bc,
     change_admin: 3,
     claim_admin: 4,
     upgrade: 5,
@@ -107,23 +108,24 @@ export class Minter implements Contract {
         provider: ContractProvider,
         via: Sender,
         address: Address,
-        value: bigint,
+        fee: bigint,
+        forward_fee: bigint,
         amount: bigint
     ) {
         await provider.internal(via, {
-            value: value,
+            value: fee,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: 
                 beginCell()
                     .storeUint(Opcodes.mint, 32)
                     .storeUint(0, 64)
                     .storeAddress(address)
-                    .storeCoins(amount)
+                    .storeCoins(forward_fee)
                     .storeRef(
                         beginCell()
                             .storeUint(Opcodes.internal_transfer, 32)
                             .storeUint(0, 64)
-                            .storeCoins(0)
+                            .storeCoins(amount)
                             .storeAddress(address) // TODO FROM?
                             .storeAddress(address) // TODO RESP?
                             .storeCoins(0)

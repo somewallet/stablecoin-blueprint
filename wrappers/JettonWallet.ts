@@ -1,4 +1,5 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
+import { Opcodes } from './Minter';
 
 export type JettonWalletConfig = {
     owner: Address;
@@ -59,6 +60,26 @@ export class JettonWallet implements Contract {
                 .storeRef(forwardPayload)
                 .endCell(),
             value: value + forwardValue,
+        });
+    }
+
+    async sendBurn(
+        provider: ContractProvider,
+        via: Sender,
+        address: Address,
+        value: bigint,
+        amount: bigint
+    ) {
+        await provider.internal(via, {
+            value: value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.burn, 32)
+                    .storeUint(0, 64)
+                    .storeCoins(amount)
+                    .storeAddress(address)
+                .endCell()
         });
     }
 

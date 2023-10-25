@@ -46,15 +46,6 @@ describe('Minter', () => {
             }, code
         ));
 
-        /*
-        await blockchain.setVerbosityForAddress(minter.address, {
-            print: true,
-            blockchainLogs: true,
-            vmLogs: 'vm_logs',
-            debugLogs: false,
-        })
-        */
-
         const stableMinterDeployResult = await minter.sendDeploy(deployer.getSender(), toNano(0.0777));
         adminJettonWallet = blockchain.openContract(JettonWallet.createFromAddress(await minter.getWalletAddress(admin.address)));
 
@@ -103,6 +94,33 @@ describe('Minter', () => {
     });
 
     it('should change admin', async () => {
+
+        await blockchain.setVerbosityForAddress(minter.address, {
+            print: true,
+            blockchainLogs: true,
+            vmLogs: 'vm_logs',
+            debugLogs: false,
+        })
+
+        const addTransferAdminResult = await minter.sendChangeAdmin(admin.getSender(), toNano(0.1), newAdmin.address);
+
+        expect(addTransferAdminResult.transactions).toHaveTransaction({
+            from: admin.address,
+            to: minter.address,
+            success: true,
+            op: 3
+        });
+
+        const claimAdminResult = await minter.sendClaimAdmin(newAdmin.getSender(), toNano(0.1));
+
+        expect(claimAdminResult.transactions).toHaveTransaction({
+            from: newAdmin.address,
+            to: minter.address,
+            success: true,
+            op: 4
+        });
+
+        expect((await minter.getJettonData()).adminAddress).toEqualAddress(newAdmin.address);
 
     });
 

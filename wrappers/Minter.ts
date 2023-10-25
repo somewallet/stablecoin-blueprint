@@ -68,29 +68,22 @@ export class Minter implements Contract {
         });
     };
 
-    async sendClaimAdmin(
+    async sendChangeManager(
         provider: ContractProvider,
         via: Sender,
         opts: {
+            address: Address;
             value: bigint;
         }
     ) {
         await provider.internal(via, {
             value: opts.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().storeUint(Opcodes.claim_admin, 32).endCell(),
+            body: beginCell().storeUint(Opcodes.change_manager, 32).storeAddress(opts.address).endCell(),
         });
     };
 
-    async sendChangeAdmin(provider: ContractProvider, via: Sender, value: bigint) {
-        await provider.internal(via, {
-            value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().endCell(),
-        });
-    };
-
-    async changeAdmin(
+    async sendChangeAdmin(
         provider: ContractProvider,
         via: Sender,
         fee: bigint,
@@ -108,18 +101,20 @@ export class Minter implements Contract {
         });
     };
 
-    async sendChangeManager(
+
+    async sendClaimAdmin(
         provider: ContractProvider,
         via: Sender,
-        opts: {
-            address: Address;
-            value: bigint;
-        }
+        fee: bigint
     ) {
         await provider.internal(via, {
-            value: opts.value,
+            value: fee,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().storeUint(Opcodes.change_manager, 32).storeAddress(opts.address).endCell(),
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.claim_admin, 32)
+                    .storeUint(0, 64)
+                .endCell()
         });
     };
 

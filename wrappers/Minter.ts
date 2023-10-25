@@ -26,7 +26,15 @@ export function minterConfigToCell(config: MinterConfig): Cell {
         .storeAddress(config.managerAddress)
         .storeRef(config.jettonWalletCode)
         .endCell();
-}
+};
+
+export type jettonData = {
+    totalSupply: bigint;
+    flag: number;
+    adminAddress: Address;
+    buildContentCell: Cell;
+    jettonWalletCode: Cell;
+};
 
 export const Opcodes = {
     internal_transfer: 0x178d4519,
@@ -40,17 +48,17 @@ export const Opcodes = {
 };
 
 export class Minter implements Contract {
-    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
+    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {};
 
     static createFromAddress(address: Address) {
         return new Minter(address);
-    }
+    };
 
     static createFromConfig(config: MinterConfig, code: Cell, workchain = 0) {
         const data = minterConfigToCell(config);
         const init = { code, data };
         return new Minter(contractAddress(workchain, init), init);
-    }
+    };
 
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
@@ -58,22 +66,7 @@ export class Minter implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().endCell(),
         });
-    }
-
-    async sendChangeAdmin(
-        provider: ContractProvider,
-        via: Sender,
-        opts: {
-            address: Address;
-            value: bigint;
-        }
-    ) {
-        await provider.internal(via, {
-            value: opts.value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().storeUint(Opcodes.change_admin, 32).storeAddress(opts.address).endCell(),
-        });
-    }
+    };
 
     async sendClaimAdmin(
         provider: ContractProvider,
@@ -87,7 +80,33 @@ export class Minter implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().storeUint(Opcodes.claim_admin, 32).endCell(),
         });
-    }
+    };
+
+    async sendChangeAdmin(provider: ContractProvider, via: Sender, value: bigint) {
+        await provider.internal(via, {
+            value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell().endCell(),
+        });
+    };
+
+    async changeAdmin(
+        provider: ContractProvider,
+        via: Sender,
+        fee: bigint,
+        address: Address
+    ) {
+        await provider.internal(via, {
+            value: fee,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.change_admin, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(address)
+                .endCell()
+        });
+    };
 
     async sendChangeManager(
         provider: ContractProvider,
@@ -102,14 +121,14 @@ export class Minter implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().storeUint(Opcodes.change_manager, 32).storeAddress(opts.address).endCell(),
         });
-    }
+    };
 
     async sendMint(
         provider: ContractProvider,
         via: Sender,
-        address: Address,
         fee: bigint,
         forward_fee: bigint,
+        address: Address,
         amount: bigint
     ) {
         await provider.internal(via, {
@@ -134,11 +153,30 @@ export class Minter implements Contract {
                     )
                 .endCell()
         });
-    }
+    };
+
+    async getJettonData(provider: ContractProvider): Promise<jettonData> {
+
+        const { stack } = await provider.get('get_jetton_data', []);
+
+        return {
+            totalSupply: stack.readBigNumber(),
+            flag: stack.readNumber(),
+            adminAddress: stack.readAddress(),
+            buildContentCell: stack.readCell(),
+            jettonWalletCode: stack.readCell()
+        };
+
+    };
+
+    async getJettonManager(provider: ContractProvider): Promise<Address> {
+        const res = await provider.get('get_jetton_manager', []);
+        return res.stack.readAddress();
+    };
 
     async getWalletAddress(provider: ContractProvider, owner: Address): Promise<Address> {
-        const res = await provider.get('get_wallet_address', [{ type: 'slice', cell: beginCell().storeAddress(owner).endCell() }])
-        return res.stack.readAddress()
-    }
-    
+        const res = await provider.get('get_wallet_address', [{ type: 'slice', cell: beginCell().storeAddress(owner).endCell() }]);
+        return res.stack.readAddress();
+    };
+
 }

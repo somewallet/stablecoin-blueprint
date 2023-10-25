@@ -9,11 +9,11 @@ export async function run(provider: NetworkProvider) {
     const minter = provider.open(Minter.createFromAddress(address('EQCCR5CbsztSlbc1ifGDZesWc5n_sOWxm-33yWJHwPvHiLID')));
 
     await minter.sendMint(
-        provider.sender(), 
-        address('UQDWfTV0XtuUrRYF8BqOm1U2yr3axYlpvxxnGXyx2nwIys7y'),
-        toNano(0.1),
-        toNano(0.05),
-        toNano(20000)
+        provider.sender(), // sender
+        toNano(0.1), // fee
+        toNano(0.05), // forward_fee
+        address('UQDWfTV0XtuUrRYF8BqOm1U2yr3axYlpvxxnGXyx2nwIys7y'), // to address
+        toNano(20000) // mint amount
     );
 
 }

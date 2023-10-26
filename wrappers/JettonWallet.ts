@@ -91,4 +91,9 @@ export class JettonWallet implements Contract {
         let res = await provider.get('get_wallet_data', []);
         return res.stack.readBigNumber();
     }
+
+    async getStatus(provider: ContractProvider) {
+        let res = await provider.get('get_status', []);
+        return res.stack.readBigNumber();
+    }
 }

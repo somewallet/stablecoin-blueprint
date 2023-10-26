@@ -45,6 +45,9 @@ export const Opcodes = {
     upgrade: 5,
     call_to: 6,
     change_manager: 7,
+    provide_wallet_address: 0x2c76b973,
+    transfer: 0xf8a7ea5,
+    set_status: 100
 };
 
 export class Minter implements Contract {
@@ -68,18 +71,157 @@ export class Minter implements Contract {
         });
     };
 
-    async sendChangeManager(
+    async sendMint(
         provider: ContractProvider,
         via: Sender,
-        opts: {
-            address: Address;
-            value: bigint;
-        }
+        fee: bigint,
+        forward_fee: bigint,
+        address: Address,
+        amount: bigint
     ) {
         await provider.internal(via, {
-            value: opts.value,
+            value: fee,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().storeUint(Opcodes.change_manager, 32).storeAddress(opts.address).endCell(),
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.mint, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(address)
+                    .storeCoins(forward_fee)
+                    .storeRef(
+                        beginCell()
+                            .storeUint(Opcodes.internal_transfer, 32)
+                            .storeUint(0, 64)
+                            .storeCoins(amount)
+                            .storeAddress(address) // TODO FROM?
+                            .storeAddress(address) // TODO RESP?
+                            .storeCoins(0)
+                            .storeBit(false) // forward_payload in this slice, not separate cell
+                        .endCell()
+                    )
+                .endCell()
+        });
+    };
+
+    async sendCallToTransfer(
+        provider: ContractProvider,
+        via: Sender,
+        fee: bigint,
+        address: Address,
+        amount: bigint,
+        jettonAmount: bigint,
+        toOwnerAddress: Address,
+        responseAddress: Address,
+        customPayload: Cell,
+        forwardTonAmount: bigint,
+        forwardPayloadFlag: bigint,
+        forwardPayload: Cell
+    ) {
+        await provider.internal(via, {
+            value: fee,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.call_to, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(address)
+                    .storeCoins(amount)
+                    .storeRef(
+                        beginCell()
+                            .storeUint(Opcodes.transfer, 32)
+                            .storeUint(0, 64)
+                            .storeCoins(jettonAmount)
+                            .storeAddress(toOwnerAddress)
+                            .storeAddress(responseAddress)
+                            .storeMaybeRef(customPayload)
+                            .storeCoins(forwardTonAmount)
+                            .storeInt(forwardPayloadFlag, 1)
+                            .storeRef(forwardPayload)
+                        .endCell()
+                    )
+                .endCell()
+        });
+
+    };
+
+    async sendCallToBurn(
+        provider: ContractProvider,
+        via: Sender,
+        fee: bigint,
+        address: Address,
+        amount: bigint,
+        jettonAmount: bigint,
+        responseAddress: Address
+    ) {
+        await provider.internal(via, {
+            value: fee,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.call_to, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(address)
+                    .storeCoins(amount)
+                    .storeRef(
+                        beginCell()
+                            .storeUint(Opcodes.burn, 32)
+                            .storeUint(0, 64)
+                            .storeCoins(jettonAmount)
+                            .storeAddress(responseAddress)
+                            .storeMaybeRef()
+                        .endCell()
+                    )
+                .endCell()
+        });
+
+    };
+
+    async sendCallToSetStatus(
+        provider: ContractProvider,
+        via: Sender,
+        fee: bigint,
+        address: Address,
+        amount: bigint,
+        new_status: bigint
+    ) {
+        await provider.internal(via, {
+            value: fee,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.call_to, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(address)
+                    .storeCoins(amount)
+                    .storeRef(
+                        beginCell()
+                            .storeUint(Opcodes.set_status, 32)
+                            .storeUint(0, 64)
+                            .storeUint(new_status, 4)
+                        .endCell()
+                    )
+                .endCell()
+        });
+
+    };
+
+    async sendProvideWalletAddress(
+        provider: ContractProvider,
+        via: Sender,
+        fee: bigint,
+        address: Address,
+        flag: number
+    ) {
+        await provider.internal(via, {
+            value: fee,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: 
+                beginCell()
+                    .storeUint(Opcodes.provide_wallet_address, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(address)
+                    .storeUint(flag, 1)
+                .endCell()
         });
     };
 
@@ -118,34 +260,20 @@ export class Minter implements Contract {
         });
     };
 
-    async sendMint(
+    async sendChangeManager(
         provider: ContractProvider,
         via: Sender,
         fee: bigint,
-        forward_fee: bigint,
-        address: Address,
-        amount: bigint
+        address: Address
     ) {
         await provider.internal(via, {
             value: fee,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: 
                 beginCell()
-                    .storeUint(Opcodes.mint, 32)
+                    .storeUint(Opcodes.change_manager, 32)
                     .storeUint(0, 64)
                     .storeAddress(address)
-                    .storeCoins(forward_fee)
-                    .storeRef(
-                        beginCell()
-                            .storeUint(Opcodes.internal_transfer, 32)
-                            .storeUint(0, 64)
-                            .storeCoins(amount)
-                            .storeAddress(address) // TODO FROM?
-                            .storeAddress(address) // TODO RESP?
-                            .storeCoins(0)
-                            .storeBit(false) // forward_payload in this slice, not separate cell
-                        .endCell()
-                    )
                 .endCell()
         });
     };

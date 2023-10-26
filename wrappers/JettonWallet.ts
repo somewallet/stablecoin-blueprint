@@ -7,6 +7,13 @@ export type JettonWalletConfig = {
     walletCode: Cell;
 };
 
+export type WalletData = {
+    balance: bigint;
+    ownerAddress: Address;
+    jettonMasterAddress: Address;
+    jettonWalletCode: Cell;
+};
+
 export function jettonWalletConfigToCell(config: JettonWalletConfig): Cell {
     return beginCell()
         .storeCoins(0)
@@ -96,4 +103,15 @@ export class JettonWallet implements Contract {
         let res = await provider.get('get_status', []);
         return res.stack.readBigNumber();
     }
+
+    async getWalletData(provider: ContractProvider): Promise<WalletData> {
+        let res = await provider.get('get_wallet_data', []);
+        return {
+            balance: res.stack.readBigNumber(),
+            ownerAddress: res.stack.readAddress(),
+            jettonMasterAddress: res.stack.readAddress(),
+            jettonWalletCode: res.stack.readCell(),
+        };
+    }
+
 }

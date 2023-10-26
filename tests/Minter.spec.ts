@@ -6,13 +6,15 @@ import { compile } from '@ton-community/blueprint';
 import { describe } from 'node:test';
 import { JettonWallet } from "../wrappers/JettonWallet";
 
-describe('Minter', () => {
+describe('Minter & Wallet tests', () => {
 
-    let code: Cell;
+    let minterCode: Cell;
+    let walletCode: Cell;
 
     beforeAll(async () => {
 
-        code = await compile('Minter');
+        minterCode = await compile('Minter');
+        walletCode = await compile('JettonWallet');
         
     });
 
@@ -47,9 +49,9 @@ describe('Minter', () => {
                 adminAddress: admin.address,
                 transferAdminAddress: transferAdmin.address,
                 managerAddress: manager.address,
-                jettonWalletCode: await compile('JettonWallet')
+                jettonWalletCode: walletCode
 
-            }, code
+            }, minterCode
         ));
 
         const stableMinterDeployResult = await minter.sendDeploy(deployer.getSender(), toNano(0.0777));
@@ -102,38 +104,7 @@ describe('Minter', () => {
 
     });
 
-    it('should burn tokens', async () => {
-
-        const burnAdminStables = await adminJettonWallet.sendBurn(
-
-            admin.getSender(), 
-            admin.address,
-            toNano(0.1),
-            toNano(1000)
-
-        );
-
-        expect(burnAdminStables.transactions).toHaveTransaction({
-            from: admin.address,
-            to: adminJettonWallet.address,
-            success: true
-        });
-
-        expect(burnAdminStables.transactions).toHaveTransaction({
-            from: adminJettonWallet.address,
-            to: minter.address,
-            success: true
-        });
-
-        expect(await adminJettonWallet.getJettonBalance()).toBe(toNano(300000000 - 1000));
-
-        const jettonData = await minter.getJettonData();
-
-        expect(jettonData.totalSupply).toBe(toNano(1000000000 - 1000));
-
-    });
-
-    it('should provide wallet address', async () => {
+    it('minter should provide wallet address', async () => {
 
         const sendProvideWalletAddressResultWithIncludedAddress = await minter.sendProvideWalletAddress(admin.getSender(), toNano(0.1), admin.address, 1);
 
@@ -187,7 +158,7 @@ describe('Minter', () => {
 
     });
 
-    it('should change admin', async () => {
+    it('minter should change admin', async () => {
 
         const addTransferAdminResult = await minter.sendChangeAdmin(admin.getSender(), toNano(0.1), newAdmin.address);
 
@@ -212,7 +183,7 @@ describe('Minter', () => {
     });
 
 
-    it('should change manager', async () => {
+    it('minter should change manager', async () => {
 
         const changeManager = await minter.sendChangeManager(admin.getSender(), toNano(0.1), newAdmin.address);
 
@@ -229,7 +200,7 @@ describe('Minter', () => {
 
     });
 
-    it('should call to', async () => {
+    it('minter should call to', async () => {
 
         const mintStablesToUser = await minter.sendMint(
             
@@ -365,6 +336,78 @@ describe('Minter', () => {
             to: user.address,
             success: true
         });
+
+    });
+
+    it('wallet should transfer & recieve tokens', async () => {
+
+        const sendStablesResult = await adminJettonWallet.sendTransfer(
+
+            admin.getSender(),
+            toNano(0.1),
+            toNano(0.1),
+            beginCell().endCell(),
+            user.address,
+            toNano(1000)
+
+        );
+
+        expect(sendStablesResult.transactions).toHaveTransaction({
+            from: admin.address,
+            to: adminJettonWallet.address,
+            success: true
+        });
+
+        expect(sendStablesResult.transactions).toHaveTransaction({
+            from: adminJettonWallet.address,
+            to: userJettonWallet.address,
+            success: true
+        });
+
+        expect(await adminJettonWallet.getJettonBalance()).toBe(toNano(300000000 - 1000));
+        expect(await userJettonWallet.getJettonBalance()).toBe(toNano(1000));
+
+    });
+
+    it('wallet should burn tokens', async () => {
+
+        const burnAdminStables = await adminJettonWallet.sendBurn(
+
+            admin.getSender(), 
+            admin.address,
+            toNano(0.1),
+            toNano(1000)
+
+        );
+
+        expect(burnAdminStables.transactions).toHaveTransaction({
+            from: admin.address,
+            to: adminJettonWallet.address,
+            success: true
+        });
+
+        expect(burnAdminStables.transactions).toHaveTransaction({
+            from: adminJettonWallet.address,
+            to: minter.address,
+            success: true
+        });
+
+        expect(await adminJettonWallet.getJettonBalance()).toBe(toNano(300000000 - 1000));
+
+        const jettonData = await minter.getJettonData();
+
+        expect(jettonData.totalSupply).toBe(toNano(1000000000 - 1000));
+
+    });
+
+    it('should get wallet data', async () => {
+
+        const walletData = await adminJettonWallet.getWalletData();
+
+        expect(walletData.balance).toBe(toNano(300000000));
+        expect(walletData.ownerAddress).toEqualAddress(admin.address);
+        expect(walletData.jettonMasterAddress).toEqualAddress(minter.address);
+        expect(walletData.jettonWalletCode).toEqualCell(walletCode);
 
     });
 

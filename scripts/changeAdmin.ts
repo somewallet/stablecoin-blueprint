@@ -1,6 +1,6 @@
 import { toNano, address } from 'ton-core';
 import { Minter } from '../wrappers/Minter';
-import { compile, NetworkProvider } from '@ton-community/blueprint';
+import { NetworkProvider } from '@ton-community/blueprint';
 
 export async function run(provider: NetworkProvider) {
 

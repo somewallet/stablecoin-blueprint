@@ -1,5 +1,5 @@
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton-community/sandbox';
-import { Address, Cell, beginCell, toNano } from 'ton-core';
+import { Cell, beginCell, toNano } from 'ton-core';
 import { Minter } from '../wrappers/Minter';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
@@ -289,7 +289,7 @@ describe('Minter & Wallet tests', () => {
 
         expect(await userJettonWallet.getJettonBalance()).toBe(toNano(6000));
 
-        const callToGetStatus = await minter.sendCallToSetStatus(
+        const callToGetStatusResult = await minter.sendCallToSetStatus(
 
             admin.getSender(), 
             toNano(0.1), 
@@ -299,13 +299,13 @@ describe('Minter & Wallet tests', () => {
 
         );
 
-        expect(callToGetStatus.transactions).toHaveTransaction({
+        expect(callToGetStatusResult.transactions).toHaveTransaction({
             from: admin.address,
             to: minter.address,
             success: true
         });
 
-        expect(callToGetStatus.transactions).toHaveTransaction({
+        expect(callToGetStatusResult.transactions).toHaveTransaction({
             from: minter.address,
             to: userJettonWallet.address,
             success: true

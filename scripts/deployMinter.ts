@@ -11,7 +11,7 @@ export async function run(provider: NetworkProvider) {
         Minter.createFromConfig(
             {
 
-                totalSupply: toNano('1000000000'),
+                totalSupply: toNano(1000000000),
                 adminAddress: address('UQDWfTV0XtuUrRYF8BqOm1U2yr3axYlpvxxnGXyx2nwIys7y'),
                 transferAdminAddress: address('UQDWfTV0XtuUrRYF8BqOm1U2yr3axYlpvxxnGXyx2nwIys7y'),
                 managerAddress: address('EQDNU1IyaUByY-bzYEX43eHG5fsDdgmh_Ev5O5O-Fe8tpoWD'),
